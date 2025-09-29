@@ -6,6 +6,8 @@ import (
 
 	"github.com/FRFebi/bot-management-backend/internal/config"
 	"github.com/FRFebi/bot-management-backend/internal/database"
+	"github.com/FRFebi/bot-management-backend/internal/handlers"
+	"github.com/FRFebi/bot-management-backend/internal/middleware"
 	"github.com/FRFebi/bot-management-backend/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -91,6 +93,24 @@ func main() {
 			"message": "Bot Management API v1.0",
 		})
 	})
+
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(cfg)
+
+	// Auth routes (public)
+	auth := api.Group("/auth")
+	auth.Post("/login", authHandler.Login)
+	auth.Post("/register", authHandler.Register)
+	auth.Post("/refresh", authHandler.RefreshToken)
+	auth.Post("/logout", authHandler.Logout)
+
+	// Protected routes
+	protected := api.Group("", middleware.AuthMiddleware(cfg))
+	protected.Get("/me", authHandler.Me)
+
+	// Admin-only routes
+	admin := api.Group("/admin", middleware.AuthMiddleware(cfg), middleware.RequireRole("admin"))
+	admin.Post("/users", authHandler.Register)
 
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
