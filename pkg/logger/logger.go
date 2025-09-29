@@ -42,3 +42,11 @@ func (l *Logger) Errorf(format string, v ...interface{}) {
 func (l *Logger) Debugf(format string, v ...interface{}) {
 	l.debug.Printf(format, v...)
 }
+
+func (l *Logger) Fatal(v ...interface{}) {
+	l.error.Fatal(v...)
+}
+
+func (l *Logger) Fatalf(format string, v ...interface{}) {
+	l.error.Fatalf(format, v...)
+}
