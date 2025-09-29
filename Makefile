@@ -15,7 +15,7 @@ build: ## Build the application
 	CGO_ENABLED=0 go build -o bin/bot-management-backend ./cmd/server
 
 run: ## Run the application
-	go run ./cmd/server
+	GOROOT=/opt/homebrew/Cellar/go/1.23.2/libexec GOENV=off /opt/homebrew/bin/go run ./cmd/server
 
 test: ## Run tests
 	go test -v ./...
@@ -27,8 +27,11 @@ clean: ## Clean build artifacts
 docker-build: ## Build Docker image
 	docker build -t bot-management-backend .
 
-docker-run: ## Run Docker container
-	docker run --rm -p 8080:8080 bot-management-backend
+docker-run: ## Run backend with Docker (recommended)
+	docker build -t bot-backend . && docker run -d -p 8080:8080 --name bot-backend bot-backend
+
+docker-stop: ## Stop Docker container
+	docker stop bot-backend && docker rm bot-backend
 
 docker-dev: ## Run development environment with Docker Compose
 	docker-compose -f docker-compose.dev.yml up --build
