@@ -96,6 +96,8 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(cfg)
+	botHandler := handlers.NewBotHandler()
+	auditHandler := handlers.NewAuditHandler()
 
 	// Auth routes (public)
 	auth := api.Group("/auth")
@@ -108,9 +110,26 @@ func main() {
 	protected := api.Group("", middleware.AuthMiddleware(cfg))
 	protected.Get("/me", authHandler.Me)
 
+	// Bot routes (protected)
+	bots := api.Group("/bots", middleware.AuthMiddleware(cfg))
+	bots.Get("/", botHandler.GetBots)
+	bots.Get("/:id", botHandler.GetBot)
+	bots.Get("/:id/status", botHandler.GetBotStatus)
+
+	// Bot management routes (admin only)
+	bots.Post("/", middleware.RequireRole("admin"), botHandler.CreateBot)
+	bots.Put("/:id", middleware.RequireRole("admin"), botHandler.UpdateBot)
+	bots.Delete("/:id", middleware.RequireRole("admin"), botHandler.DeleteBot)
+	bots.Post("/:id/start", middleware.RequireRole("admin"), botHandler.StartBot)
+	bots.Post("/:id/stop", middleware.RequireRole("admin"), botHandler.StopBot)
+	bots.Post("/:id/restart", middleware.RequireRole("admin"), botHandler.RestartBot)
+	bots.Post("/:id/deploy", middleware.RequireRole("admin"), botHandler.DeployBot)
+
 	// Admin-only routes
 	admin := api.Group("/admin", middleware.AuthMiddleware(cfg), middleware.RequireRole("admin"))
 	admin.Post("/users", authHandler.Register)
+	admin.Get("/audit-logs", auditHandler.GetAuditLogs)
+	admin.Get("/audit-logs/:id", auditHandler.GetAuditLog)
 
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
